@@ -1,0 +1,7 @@
+{
+    "development":{
+        "PORT":3000,
+        "MONGODB_URL":"mongodb://localhost:27017/CongTest",
+        "JWT_SECRET":"secret123456789"
+    }
+}
