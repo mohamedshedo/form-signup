@@ -79,8 +79,13 @@ let UserModelSchema= mongoose.Schema({
     tokens:[{
         access:{type:String,required:true},
         token:{type:String,required:true}
-    }]
+    }],
 
+    statuses:[
+        {
+            _id:{type:mongoose.SchemaTypes.ObjectId,required:true},
+        }
+    ]
 }); 
 
 UserModelSchema.statics.findByEmail=function(email,password){

@@ -2,6 +2,9 @@ const {upload}=require('./../multer/storage');
 const fs= require('fs');
 const {UserModel}=require('./../models/UserModel');
 const _ =require('lodash');
+const {authenticate}=require('./../middleware/authenticate');
+const {statusModel}=require('./../models/StatusModel');
+const mongoose=require('mongoose');
 module.exports.api=function(app){
 
 app.post('/formRegist',upload.single('avatar'),(req,res)=>{
@@ -30,7 +33,7 @@ app.post('/formRegist',upload.single('avatar'),(req,res)=>{
       return newUser.generateAuthToken();
 
     }).then((token)=>{
-      res..status(201).header('x-auth',token).send(_.pick(newUser,['first_name','last_name','country_code','phone_number','gender','birthdate','email']));
+      res.status(201).header('x-auth',token).send(_.pick(newUser,['first_name','last_name','country_code','phone_number','gender','birthdate','email']));
 
     }).catch((err) => {
       res.send(err);
@@ -57,8 +60,27 @@ app.post('/user',(req,res)=>{
 })
 
 
-app.post('/phoneAuth',(req,res)=>{
+app.post('/phoneAuth',authenticate,(req,res)=>{
 
+    if(req.user.phone_number!==req.body.phone_number){
+        return   res.status(400).send('invalid phone number');
+    }
 
-})
+    let user= req.user;
+   console.log(user._id);
+    let newStatus= new statusModel({
+        title:req.body.status,
+        CreatedBy:user._id
+    });
+
+    newStatus.save().then((doc)=>{
+        user.statuses.push({_id:doc._id});
+       return user.save();
+    }).then((doc)=>{
+        res.status(200).send('success');
+    }).catch((err)=>{
+        res.status(400).send(err);
+    })
+
+    });
 };
