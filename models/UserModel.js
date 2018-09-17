@@ -38,7 +38,10 @@ let UserModelSchema= mongoose.Schema({
         type:String,
         required:true,
         default:'male',
-        enum:['male','female','other']
+        enum:{
+            values:['male','female','other'],
+            message:"Invalid"
+        }
     },
     birthdate:{
         type:Date,
@@ -49,7 +52,7 @@ let UserModelSchema= mongoose.Schema({
                 
             },
             message:'invalid'
-        }
+        },get:DateTransofrm
     },
     avatar:{
         data:{
@@ -87,6 +90,14 @@ let UserModelSchema= mongoose.Schema({
         }
     ]
 }); 
+
+
+
+function DateTransofrm(value){
+ 
+    return `${moment(value).year()}-${moment(value).month()}-${moment(value).day()}`;
+}
+
 
 UserModelSchema.statics.findByEmail=function(email,password){
     let User=this;
@@ -157,7 +168,7 @@ UserModelSchema.statics.findByToken=function(token){
 UserModelSchema.pre('save',function(next){
 
     let user = this;
-
+  
     if(user.isModified('password')){
         
         bcrypt.genSalt(10,(err,salt)=>{

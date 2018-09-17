@@ -5,11 +5,16 @@ const _ =require('lodash');
 const {authenticate}=require('./../middleware/authenticate');
 const {statusModel}=require('./../models/StatusModel');
 const mongoose=require('mongoose');
+const sanitize= require('mongo-sanitize');
 module.exports.api=function(app){
 
 app.post('/formRegist',upload.single('avatar'),(req,res)=>{
+
+
     let reqBody=_.pick(req.body,['first_name','last_name','country_code','phone_number','gender','birthdate','email','password']);
-   
+ 
+
+
     let newUser= new UserModel({
       first_name:reqBody.first_name,
       last_name:reqBody.last_name,
@@ -24,21 +29,34 @@ app.post('/formRegist',upload.single('avatar'),(req,res)=>{
     newUser.avatar.data = fs.readFileSync(req.file.path)
     newUser.avatar.contentType = req.file.mimetype;
     }
-
-
-
-    newUser.save().then((result) => {
-      fs.unlinkSync(req.file.path,(err)=>{
-      });
+     newUser.save()
+    .then((result) => {
       return newUser.generateAuthToken();
 
     }).then((token)=>{
       res.status(201).header('x-auth',token).send(_.pick(newUser,['first_name','last_name','country_code','phone_number','gender','birthdate','email']));
 
     }).catch((err) => {
-      res.send(err);
+
+        let errObject={errors:{}}
+        if(err.errors){
+         Object.keys(err.errors).forEach((key)=>{
+              errObject.errors[key]=err.errors[key].message;
+             });
+
+         if(req.fileValidationError){
+              errObject.errors['avatar.data']=req.fileValidationError;
+          }
+        }
+          res.status(400).send(errObject);
     });
-  
+
+
+   if(req.file){
+       fs.unlinkSync(req.file.path,()=>{
+           console.log('file cant be delted');
+       })
+   }
   
   });
 
@@ -47,7 +65,7 @@ app.post('/user',(req,res)=>{
 
     let reqBody=_.pick(req.body,['phone_number','password']);
  
-    UserModel.findByPhone(reqBody.phone_number,reqBody.password).then((user)=>{
+    UserModel.findByPhone(sanitize(reqBody.phone_number),sanitize(reqBody.password)).then((user)=>{
         return user.generateAuthToken();
     })
     .then((token)=>{
@@ -67,7 +85,7 @@ app.post('/phoneAuth',authenticate,(req,res)=>{
     }
 
     let user= req.user;
-   console.log(user._id);
+   
     let newStatus= new statusModel({
         title:req.body.status,
         CreatedBy:user._id

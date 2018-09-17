@@ -16,7 +16,7 @@ const fileFilter=(req,file,cb)=>{
     cb(null,true);
   }else{
     req.fileValidationError = 'goes wrong on the mimetype';
-     cb(null, false, new Error('goes wrong on the mimetype'));
+     cb(null, false,req.fileValidationError );
   }
 }
 let upload = multer({ 
